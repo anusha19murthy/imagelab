@@ -12,10 +12,12 @@ class SobelDerivative(BaseOperator):
             ddepth = cv2.CV_64F
 
         if direction == "HORIZONTAL":
-            return cv2.Sobel(image, ddepth, 1, 0)
+            result = cv2.Sobel(image, ddepth, 1, 0)
         elif direction == "VERTICAL":
-            return cv2.Sobel(image, ddepth, 0, 1)
+            result = cv2.Sobel(image, ddepth, 0, 1)
         else:
             sobel_x = cv2.Sobel(image, ddepth, 1, 0)
             sobel_y = cv2.Sobel(image, ddepth, 0, 1)
-            return cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
+            result = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
+
+        return np.uint8(np.absolute(result))
