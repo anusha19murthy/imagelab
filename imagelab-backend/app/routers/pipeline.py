@@ -12,5 +12,5 @@ async def health():
 
 
 @router.post("/pipeline/execute", response_model=PipelineResponse)
-async def execute(request: PipelineRequest):
+def execute(request: PipelineRequest):
     return execute_pipeline(request)
