@@ -4,9 +4,9 @@ export const augmentationBlocks = [
     message0: "Add Gaussian Noise %1 Mean %2 %3 Sigma %4",
     args0: [
       { type: "input_dummy" },
-      { type: "field_number", name: "mean", value: 0 },
+      { type: "field_number", name: "mean", value: 0, min: -127, max: 127 },
       { type: "input_dummy" },
-      { type: "field_number", name: "sigma", value: 25, min: 1 },
+      { type: "field_number", name: "sigma", value: 25, min: 1, max: 255 },
     ],
     previousStatement: null,
     nextStatement: null,
