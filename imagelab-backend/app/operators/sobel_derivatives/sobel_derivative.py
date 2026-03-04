@@ -6,6 +6,10 @@ from app.operators.base import BaseOperator
 
 class SobelDerivative(BaseOperator):
     def compute(self, image: np.ndarray) -> np.ndarray:
+        """Apply the Sobel derivative operator.
+
+        Returns a uint8 image with values in [0, 255].
+        """
         direction = self.params.get("type", "HORIZONTAL")
         ddepth = int(self.params.get("ddepth", 0))
         if ddepth == 0:
@@ -18,6 +22,6 @@ class SobelDerivative(BaseOperator):
         else:
             sobel_x = cv2.Sobel(image, ddepth, 1, 0)
             sobel_y = cv2.Sobel(image, ddepth, 0, 1)
-            result = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
+            result = np.hypot(sobel_x, sobel_y)
 
-        return np.uint8(np.absolute(result))
+        return cv2.convertScaleAbs(result)
