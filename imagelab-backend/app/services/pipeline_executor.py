@@ -7,6 +7,10 @@ from app.utils.image import decode_base64_image, encode_image_base64
 NOOP_TYPES = {"basic_readimage", "basic_writeimage", "border_for_all", "border_each_side"}
 
 
+# Thread-safety: this function is safe to call concurrently from FastAPI's
+# threadpool. All processing state (image array, operator instances, encoded
+# output) is local to each invocation. The module-level NOOP_TYPES set and
+# OPERATOR_REGISTRY dict are read-only after import and never mutated.
 def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
     """
     Execute the image-processing pipeline described by *request*.
