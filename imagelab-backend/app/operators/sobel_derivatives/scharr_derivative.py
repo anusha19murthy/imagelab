@@ -15,9 +15,6 @@ class ScharrDerivative(BaseOperator):
         if ddepth == 0:
             ddepth = cv2.CV_64F
 
-        if direction == "HORIZONTAL":
-            result = cv2.Scharr(image, ddepth, 1, 0)
-        else:
-            result = cv2.Scharr(image, ddepth, 0, 1)
+        result = cv2.Scharr(image, ddepth, 1, 0) if direction == "HORIZONTAL" else cv2.Scharr(image, ddepth, 0, 1)
 
         return cv2.convertScaleAbs(result)
