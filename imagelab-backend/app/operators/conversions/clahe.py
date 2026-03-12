@@ -56,9 +56,9 @@ class claheImage(BaseOperator):
             bgr = image[:, :, :3]
             alpha = image[:, :, 3]
             lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-            l, a, b = cv2.split(lab)
-            l = clahe.apply(l)
-            result_bgr = cv2.cvtColor(cv2.merge((l, a, b)), cv2.COLOR_LAB2BGR)
+            lightness, a, b = cv2.split(lab)
+            l_enhanced = clahe.apply(lightness)
+            result_bgr = cv2.cvtColor(cv2.merge((l_enhanced, a, b)), cv2.COLOR_LAB2BGR)
             return np.dstack([result_bgr, alpha])
         else:
             # Grayscale handling
