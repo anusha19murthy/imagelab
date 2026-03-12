@@ -28,3 +28,12 @@ def test_invalid_dtype_raises():
     img = np.random.rand(64, 64, 3).astype(np.float32)
     with pytest.raises(ValueError, match="uint8"):
         make_op().compute(img)
+
+
+def test_bgra_preserves_alpha():
+    img = np.random.randint(0, 256, (10, 10, 4), dtype=np.uint8)
+    img[:, :, 3] = 128
+    result = make_op().compute(img)
+    assert result.shape == img.shape
+    assert result.dtype == np.uint8
+    np.testing.assert_array_equal(result[:, :, 3], img[:, :, 3])

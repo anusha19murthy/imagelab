@@ -55,7 +55,10 @@ class claheImage(BaseOperator):
             # BGRA — apply CLAHE to luminance, preserve alpha
             bgr = image[:, :, :3]
             alpha = image[:, :, 3]
-            result_bgr = self._apply_to_bgr(clahe, bgr)
+            lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            l = clahe.apply(l)
+            result_bgr = cv2.cvtColor(cv2.merge((l, a, b)), cv2.COLOR_LAB2BGR)
             return np.dstack([result_bgr, alpha])
         else:
             # Grayscale handling
