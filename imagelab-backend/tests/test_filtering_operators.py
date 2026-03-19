@@ -82,9 +82,7 @@ class TestBoxFilter:
 
         result = BoxFilter({"width": width, "height": height, "depth": -1}).compute(image)
 
-        result = BoxFilter({"width": width, "height": height, "depth": -1}).compute(
-            image
-        )
+        result = BoxFilter({"width": width, "height": height, "depth": -1}).compute(image)
 
         expected = cv2.boxFilter(
             image,
