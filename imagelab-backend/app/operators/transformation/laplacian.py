@@ -20,5 +20,11 @@ class Laplacian(BaseOperator):
         if ksize not in _VALID_KSIZE:
             raise ValueError(f"Invalid ksize={ksize}; must be one of {sorted(_VALID_KSIZE)}")
 
+        # ddepth=cv2.CV_16S preserves signed Laplacian responses (both positive and negative)
+        # before the saturating cast. Using CV_8U would clip values during computation itself,
+        # masking large overshoots and making convertScaleAbs ineffective.
         laplacian = cv2.Laplacian(image, ddepth, ksize=ksize)
-        return np.uint8(np.absolute(laplacian))
+        # cv2.convertScaleAbs applies abs() and clips to [0, 255] (saturating cast).
+        # Using np.uint8() directly would wrap values > 255 modulo 256, producing
+        # incorrect edge intensities (e.g., a response of 600 would become 88).
+        return cv2.convertScaleAbs(laplacian)
