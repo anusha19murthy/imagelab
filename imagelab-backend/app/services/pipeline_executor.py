@@ -1,10 +1,32 @@
 import time
 
-from app.models.pipeline import PipelineRequest, PipelineResponse, PipelineTimings, StepTiming
+from app.models.pipeline import (
+    ChannelHistogram,
+    HistogramData,
+    IntermediateStepResult,
+    PipelineRequest,
+    PipelineResponse,
+    PipelineTimings,
+    StepTiming,
+)
 from app.operators.registry import get_operator
+from app.utils.histogram import compute_histogram
 from app.utils.image import decode_base64_image, encode_image_base64
 
 NOOP_TYPES = {"basic_readimage", "basic_writeimage", "border_for_all", "border_each_side"}
+
+
+def _build_intermediate(step_index: int, operator_type: str, image, image_format: str) -> IntermediateStepResult:
+    """Capture an intermediate result: base64 thumbnail + histogram."""
+    encoded = encode_image_base64(image, image_format)
+    raw_hist = compute_histogram(image)
+    histogram = HistogramData(channels=[ChannelHistogram(**ch) for ch in raw_hist["channels"]])
+    return IntermediateStepResult(
+        step=step_index,
+        operator_type=operator_type,
+        image=encoded,
+        histogram=histogram,
+    )
 
 
 # Thread-safety: this function is safe to call concurrently from FastAPI's
@@ -19,9 +41,16 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
     populated with every step that completed before the function returned,
     even when the response indicates failure.  This allows callers to
     inspect partial execution progress on error.
+
+    When ``request.include_intermediates`` is True, each completed step
+    also captures a base64-encoded snapshot of the image and per-channel
+    histogram statistics.  These are returned in the ``intermediates``
+    field.  Existing callers that omit this flag get the same behaviour
+    as before (intermediates is None).
     """
     t_start_total = time.perf_counter()
     step_timings: list[StepTiming] = []
+    intermediates: list[IntermediateStepResult] = [] if request.include_intermediates else None
 
     try:
         image = decode_base64_image(request.image)
@@ -32,6 +61,7 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
             error=f"Failed to decode image: {e}",
             step=0,
             timings=PipelineTimings(total_ms=(t_fail - t_start_total) * 1000, steps=step_timings),
+            intermediates=intermediates,
         )
 
     for i, step in enumerate(request.pipeline):
@@ -46,6 +76,7 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
                 error=f"Unknown operator '{step.type}' at step {i + 1}",
                 step=i + 1,
                 timings=PipelineTimings(total_ms=(t_fail - t_start_total) * 1000, steps=step_timings),
+                intermediates=intermediates,
             )
 
         try:
@@ -56,6 +87,9 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
             step_timings.append(
                 StepTiming(step=i + 1, operator_type=step.type, duration_ms=(t_step_end - t_step_start) * 1000)
             )
+
+            if intermediates is not None:
+                intermediates.append(_build_intermediate(i + 1, step.type, image, request.image_format))
         except Exception as e:
             t_fail = time.perf_counter()
             return PipelineResponse(
@@ -63,6 +97,7 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
                 error=f"Error in step {i + 1} ({step.type}): {type(e).__name__}: {e}",
                 step=i + 1,
                 timings=PipelineTimings(total_ms=(t_fail - t_start_total) * 1000, steps=step_timings),
+                intermediates=intermediates,
             )
 
     try:
@@ -75,6 +110,7 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
             error=error_msg,
             step=len(request.pipeline),
             timings=PipelineTimings(total_ms=(t_fail - t_start_total) * 1000, steps=step_timings),
+            intermediates=intermediates,
         )
 
     t_end_total = time.perf_counter()
@@ -84,4 +120,5 @@ def execute_pipeline(request: PipelineRequest) -> PipelineResponse:
         image=encoded,
         image_format=request.image_format,
         timings=PipelineTimings(total_ms=(t_end_total - t_start_total) * 1000, steps=step_timings),
+        intermediates=intermediates,
     )
