@@ -20,7 +20,7 @@ def hex_to_bgr(hex_color: str) -> tuple[int, int, int]:
     if not isinstance(hex_color, str):
         raise TypeError(f"hex_to_bgr expects a str, got {type(hex_color).__name__!r}")
 
-        raise TypeError(f"hex_to_bgr expects a str, got {type(hex_color).__name__!r}")
+        raise TypeError(f"hex_to_bgr expects a str, got {type(hex_color).__name__!r}"
 
     original = hex_color
     normalized = hex_color.removeprefix("#")
